@@ -8,6 +8,7 @@ from pypiper.manager import pipeline_filepath
 logging.basicConfig(format="%(levelname)s | %(message)s", level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
 
+SCRIPTS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
 
 def main():
     parser = argparse.ArgumentParser(description="Process BED files.")
@@ -34,18 +35,20 @@ def main():
 
     # Step 1. Extract first 3 columns (chr, start, end) from all input beds)
     # step1_target = os.path.join(output_folder, "files_rows_total.out")
+    step1_script_path = os.path.join(SCRIPTS_FOLDER, "get_chr_start_end.sh")
     step1_commands = [
-        "chmod +x ./scripts/get_chr_start_end.sh",
+        f"chmod +x {step1_script_path}",
         # f"./scripts/get_chr_start_end.sh {bed_folder} {output_folder} > {step1_target}",
-        f"./scripts/get_chr_start_end.sh {bed_folder} {output_folder}",
+        f"{step1_script_path} {bed_folder} {output_folder}",
     ]
 
     pm.run(step1_commands, os.path.join(output_folder, "lock.max"))
 
     # Step 2.
+    step2_script_path = os.path.join(SCRIPTS_FOLDER, "group_by_chr.sh")
     step2_commands = [
-        "chmod +x ./scripts/group_by_chr.sh",
-        f"./scripts/group_by_chr.sh {os.path.join(output_folder, 'chr_start_end')}",
+        f"chmod +x {step2_script_path}",
+        f"{step2_script_path} {os.path.join(output_folder, 'chr_start_end')}",
     ]
 
     # pm.run(step2_commands, target=step2_target)
@@ -57,13 +60,15 @@ def main():
         pm.clean_add(pipeline_filepath(pm, "chr_start_end"))
 
     # Step 3. Clean chromosomes
-    step3_command = f"python ./scripts/clean_chr.py {os.path.join(output_folder, 'by_chromosomes')} {chrom_ref_path}"
+    step3_script_path = os.path.join(SCRIPTS_FOLDER, "clean_chr.py")
+    step3_command = f"python {step3_script_path} {os.path.join(output_folder, 'by_chromosomes')} {chrom_ref_path}"
     pm.run(step3_command, os.path.join(output_folder, "lock.max"))
 
     # Step 4. Sort each chromosome's file
+    step4_script_path = os.path.join(SCRIPTS_FOLDER, "sort_each_chr.sh")
     step4_commands = [
-        "chmod +x ./scripts/sort_each_chr.sh",
-        f"./scripts/sort_each_chr.sh {os.path.join(output_folder, 'by_chromosomes')}",
+        f"chmod +x {step4_script_path}",
+        f"{step4_script_path} {os.path.join(output_folder, 'by_chromosomes')}",
     ]
 
     pm.run(step4_commands, os.path.join(output_folder, "lock.max"))
