@@ -14,7 +14,6 @@ for chr_file in "${chr_files[@]}"; do
     chr_name=$(basename "$chr_file")  # Get filename with .bed extension
 
     paste <(awk -F'\t' '{print $1}' "$chr_file") \
-      <(awk -F'\t' '{print $2}' "$chr_file" | sort -n) \
-      <(awk -F'\t' '{print $3}' "$chr_file" | sort -n) > "$sorted_dir/$chr_name.sorted"
+      <(awk -F'\t' '{print $2}' "$chr_file" | sort -n)  > "$sorted_dir/$chr_name.sorted"
 
 done

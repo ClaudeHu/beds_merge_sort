@@ -9,8 +9,6 @@ logging.basicConfig(format="%(levelname)s | %(message)s", level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
 
 
-
-
 def main():
     parser = argparse.ArgumentParser(description="Process BED files.")
     parser.add_argument("bed_folder", type=str, help="Input BED folder")
@@ -75,12 +73,11 @@ def main():
         pm.clean_add(pipeline_filepath(pm, "by_chromosomes/*.bed"))
         pm.clean_add(pipeline_filepath(pm, "by_chromosomes"))
 
-
     # Step 5. Merge
     sorted_file = os.path.join(output_folder, "combined_chrsort.bed")
     step5_commands = [
         f"find {os.path.join(output_folder, 'by_chromosomes_sorted')} -maxdepth 1 -name '*.sorted' | sort -V | xargs cat > {sorted_file}",
-        f'echo "$(wc -l < {sorted_file}) start-end sorted in total"'
+        f'echo "$(wc -l < {sorted_file}) start-end sorted in total"',
     ]
 
     pm.run(step5_commands, sorted_file)
