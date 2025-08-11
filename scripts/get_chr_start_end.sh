@@ -9,6 +9,7 @@ mkdir -p "$DEST_DIR"
 
 # Use mapfile to get all matching files
 mapfile -t FILES_ARRAY < <(find "$SOURCE_DIR" -maxdepth 1 -type f \( \
+  -name "*.bed" -o \
   -name "*.bed.gz" -o \
   -name "*.bed.bz2" -o \
   -name "*.narrowPeak.gz" -o \
@@ -35,8 +36,8 @@ for FILE_PATH in "${FILES_ARRAY[@]}"; do
         DECOMP_CMD="bunzip2 -c"
         OUT_NAME="${FILE_NAME%.bz2}"
     else
-        echo "Unknown extension: $FILE_NAME" >&2
-        continue
+      DECOMP_CMD="cat"
+      OUT_NAME="$FILE_NAME"
     fi
 
     OUTPUT_FILE="$DEST_DIR/$OUT_NAME"

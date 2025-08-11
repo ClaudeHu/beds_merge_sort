@@ -18,6 +18,9 @@ def main():
         "chrom_size_ref_path", type=str, help="Chrom size reference file"
     )
     parser.add_argument(
+        "--allcols", action="store_true", help="Remain all columns in input bedfiles instead of extracting chr, start, end"
+    )
+    parser.add_argument(
         "--clean", action="store_true", help="Clean temporary files after processing"
     )
 
@@ -26,6 +29,7 @@ def main():
     bed_folder = args.bed_folder
     output_folder = args.output_folder
     chrom_ref_path = args.chrom_size_ref_path
+    allcols = args.allcols
     clean = args.clean
 
     os.makedirs(output_folder, exist_ok=True)
@@ -35,20 +39,25 @@ def main():
 
     # Step 1. Extract first 3 columns (chr, start, end) from all input beds)
     # step1_target = os.path.join(output_folder, "files_rows_total.out")
-    step1_script_path = os.path.join(SCRIPTS_FOLDER, "get_chr_start_end.sh")
-    step1_commands = [
-        f"chmod +x {step1_script_path}",
-        # f"./scripts/get_chr_start_end.sh {bed_folder} {output_folder} > {step1_target}",
-        f"{step1_script_path} {bed_folder} {output_folder}",
-    ]
+    if allcols:
+        step2_input_folder = bed_folder
+    else:
+        step1_script_path = os.path.join(SCRIPTS_FOLDER, "get_chr_start_end.sh")
+        step1_commands = [
+            f"chmod +x {step1_script_path}",
+            # f"./scripts/get_chr_start_end.sh {bed_folder} {output_folder} > {step1_target}",
+            f"{step1_script_path} {bed_folder} {output_folder}",
+        ]
 
-    pm.run(step1_commands, os.path.join(output_folder, "lock.max"))
+        pm.run(step1_commands, os.path.join(output_folder, "lock.max"))
+        step2_input_folder = os.path.join(output_folder, 'chr_start_end')
+
 
     # Step 2.
     step2_script_path = os.path.join(SCRIPTS_FOLDER, "group_by_chr.sh")
     step2_commands = [
         f"chmod +x {step2_script_path}",
-        f"{step2_script_path} {os.path.join(output_folder, 'chr_start_end')}",
+        f"{step2_script_path} {step2_input_folder}",
     ]
 
     # pm.run(step2_commands, target=step2_target)
@@ -81,7 +90,7 @@ def main():
     # Step 5. Merge
     sorted_file = os.path.join(output_folder, "combined_chrsort.bed")
     step5_commands = [
-        f"find {os.path.join(output_folder, 'by_chromosomes_sorted')} -maxdepth 1 -name '*.sorted' | sort -V | xargs cat > {sorted_file}",
+        f"find {os.path.join(output_folder, 'by_chromosomes_sorted')} -maxdepth 1 -name '*.sorted.bed' | sort -V | xargs cat > {sorted_file}",
         f'echo "$(wc -l < {sorted_file}) start-end sorted in total"',
     ]
 
@@ -89,7 +98,7 @@ def main():
 
     # check intermediate file
     if clean:
-        pm.clean_add(pipeline_filepath(pm, "by_chromosomes_sorted/*.bed.sorted"))
+        pm.clean_add(pipeline_filepath(pm, "by_chromosomes_sorted/*.sorted.bed"))
         pm.clean_add(pipeline_filepath(pm, "by_chromosomes_sorted"))
 
     pm.stop_pipeline()
